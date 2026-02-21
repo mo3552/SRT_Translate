@@ -46,18 +46,54 @@ OpenAI GPT-4o-mini 또는 NLLB 모델을 선택하여 영어 SRT 자막을 자�
 2. [Settings > Tokens](https://huggingface.co/settings/tokens)에서 토큰 생성
 3. 생성한 토큰을 `.env` 파일의 `HF_TOKEN`에 입력
 
-PyTorch 설치 필요:
+**GPU 하드웨어 가속 사용 시 (권장):**
 
-**GPU 가속 사용:**
+NVIDIA GPU가 있는 경우 CUDA Toolkit과 cuDNN을 먼저 설치해야 합니다:
+
+1. **CUDA Toolkit 설치**
+    - [NVIDIA CUDA Toolkit 다운로드](https://developer.nvidia.com/cuda-downloads)
+    - 권장 버전: CUDA 11.8 또는 12.x
+    - 설치 후 시스템 재시작
+
+2. **cuDNN 설치**
+    - [NVIDIA cuDNN 다운로드](https://developer.nvidia.com/cudnn) (NVIDIA 계정 필요)
+    - CUDA 버전에 맞는 cuDNN 선택
+    - 다운로드한 파일을 CUDA 설치 폴더에 복사
+
+3. **설치 확인**
+
+    ```bash
+    # CUDA 버전 확인
+    nvcc --version
+
+    # GPU 확인
+    nvidia-smi
+    ```
+
+**PyTorch 설치:**
+
+GPU 가속 사용 (CUDA 11.8):
 
 ```bash
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
 ```
 
-**CPU 전용:**
+GPU 가속 사용 (CUDA 12.x):
 
 ```bash
-pip install torch torchvision torchaudio
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+```
+
+GPU 가속 사용 (CUDA 13.x):
+
+```bash
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu130
+```
+
+CPU 전용:
+
+```bash
+pip install torch torchvision
 ```
 
 ### 2. 의존성 패키지 설치
@@ -111,7 +147,10 @@ pip install -r requirements.txt
 **NLLB 모델:**
 
 - 최소 8GB RAM
-- GPU 사용 시: CUDA 지원 GPU (RTX 4060 이상 권장)
+- GPU 사용 시:
+    - NVIDIA GPU (RTX 4060 이상 권장)
+    - CUDA Toolkit 11.8 또는 12.x
+    - cuDNN (CUDA 버전에 맞는 버전)
 - 오프라인 사용 가능
 
 ## 사용 모델
@@ -161,8 +200,11 @@ translate_srt/
 **NLLB 모델:**
 
 - 처음 실행 시 모델 다운로드 (약 1.2GB)
-- GPU 사용 시 번역 속도가 크게 향상됩니다
+- GPU 사용 시:
+    - CUDA Toolkit과 cuDNN을 먼저 설치해야 합니다
+    - 번역 속도가 크게 향상됩니다 (CPU 대비 5~10배 이상)
 - PyTorch 설치 필요
+- GPU 없이도 CPU 모드로 작동 가능 (속도 느림)
 
 ## 라이선스
 
