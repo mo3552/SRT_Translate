@@ -28,7 +28,7 @@ class TranslatorGUI:
         
         # 변수
         self.file_path = tk.StringVar()
-        self.model_var = tk.StringVar(value="openai")  # 모델 선택
+        self.model_var = tk.StringVar(value="deepl")  # 모델 선택 (DeepL 기본값)
         self.tone_var = tk.StringVar(value="auto")
         self.cuda_status = tk.StringVar(value="확인 중...")
         
@@ -42,7 +42,6 @@ class TranslatorGUI:
         main_frame.grid(row=0, column=0, sticky="nsew")
         
         # 제목
-        
         title_label = ttk.Label(
             main_frame,
             text="SRT 자막 번역기",
@@ -64,11 +63,19 @@ class TranslatorGUI:
         
         ttk.Radiobutton(
             model_frame,
-            text="OpenAI GPT-4o-mini (추천: 고품질, 초저비용)",
+            text="DeepL (추천: 최고 품질, 빠른 속도)",
+            variable=self.model_var,
+            value="deepl",
+            command=self._on_model_change
+        ).grid(row=0, column=0, sticky=tk.W, padx=(0, 20))
+        
+        ttk.Radiobutton(
+            model_frame,
+            text="OpenAI GPT-4o-mini (고품질, 초저비용)",
             variable=self.model_var,
             value="openai",
             command=self._on_model_change
-        ).grid(row=0, column=0, sticky=tk.W, padx=(0, 20))
+        ).grid(row=1, column=0, sticky=tk.W, padx=(0, 20))
         
         ttk.Radiobutton(
             model_frame,
@@ -76,7 +83,7 @@ class TranslatorGUI:
             variable=self.model_var,
             value="nllb",
             command=self._on_model_change
-        ).grid(row=1, column=0, sticky=tk.W, padx=(0, 20))
+        ).grid(row=2, column=0, sticky=tk.W, padx=(0, 20))
         
         # 파일 선택
         file_frame = ttk.LabelFrame(main_frame, text="파일 선택", padding="10")
@@ -146,8 +153,7 @@ class TranslatorGUI:
         self.translate_btn = ttk.Button(
             main_frame,
             text="번역 시작",
-            command=self._start_translation,
-            style="Accent.TButton"
+            command=self._start_translation
         )
         self.translate_btn.grid(row=6, column=0, columnspan=3, pady=(0, 10))
         
@@ -180,7 +186,12 @@ class TranslatorGUI:
             self.model_change_callback(model)
         else:
             # 콜백이 없으면 기본 메시지만 표시
-            if model == "openai":
+            if model == "deepl":
+                self.status_label.config(
+                    text="DeepL 모델 선택됨 - 전문 번역 서비스, 최고 품질, 빠른 속도",
+                    foreground="green"
+                )
+            elif model == "openai":
                 self.status_label.config(
                     text="OpenAI 모델 선택됨 - 고품질 번역, GPU 불필요",
                     foreground="green"

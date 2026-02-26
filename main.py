@@ -7,6 +7,7 @@ import os
 from dotenv import load_dotenv
 
 from translator_openai import OpenAITranslator
+from translator_deepl import DeepLTranslator
 from translator import NLLBTranslator
 from srt_parser import SRTParser
 from gui import TranslatorGUI
@@ -22,6 +23,7 @@ class SRTTranslatorApp:
         """애플리케이션 초기화"""
         # 환경 변수에서 API 키 로드
         self.openai_api_key = os.getenv('OPENAI_API_KEY')
+        self.deepl_api_key = '7d9b9126-3507-4e20-a200-d091a39bfb16:fx'  # DeepL API 키
         self.hf_token = os.getenv('HF_TOKEN')
         
         # API 키 검증
@@ -36,6 +38,7 @@ class SRTTranslatorApp:
         
         # 번역기 초기화 (None으로 시작)
         self.openai_translator = None
+        self.deepl_translator = None
         self.nllb_translator = None
         
         # GUI 콜백 설정
@@ -69,9 +72,23 @@ class SRTTranslatorApp:
         모델 변경 시 호출되는 콜백
         
         Args:
-            model_type: 선택된 모델 타입 ('openai' 또는 'nllb')
+            model_type: 선택된 모델 타입 ('deepl', 'openai' 또는 'nllb')
         """
-        if model_type == "openai":
+        if model_type == "deepl":
+            # DeepL 모델이 이미 로드되어 있으면 상태 업데이트
+            if self.deepl_translator:
+                self.gui.update_cuda_status("✓ DeepL API 연결됨", True)
+                self.gui.status_label.config(
+                    text="DeepL 모델 선택됨 - 전문 번역 서비스, 최고 품질",
+                    foreground="green"
+                )
+            else:
+                self.gui.update_cuda_status("DeepL 초기화 대기 중...", True)
+                self.gui.status_label.config(
+                    text="DeepL 모델 초기화 중...",
+                    foreground="blue"
+                )
+        elif model_type == "openai":
             # OpenAI 모델이 이미 로드되어 있으면 상태 업데이트
             if self.openai_translator:
                 self.gui.update_cuda_status("✓ OpenAI API 연결됨", True)
@@ -109,28 +126,27 @@ class SRTTranslatorApp:
     def _load_models(self):
         """모델 로딩"""
         try:
-            # 기본적으로 OpenAI 모델 로드
+            # 기본적으로 DeepL 모델 로드
             self.root.after(0, lambda: self.gui.status_label.config(
-                text="OpenAI 모델 초기화 중...",
+                text="DeepL 모델 초기화 중...",
                 foreground="blue"
             ))
             
-            # OpenAI 번역기 초기화
-            self.openai_translator = OpenAITranslator(
-                api_key=self.openai_api_key,
-                model="gpt-4o-mini"
+            # DeepL 번역기 초기화
+            self.deepl_translator = DeepLTranslator(
+                api_key=self.deepl_api_key
             )
             
             # API 연결 테스트
-            api_info = self.openai_translator.check_api()
+            api_info = self.deepl_translator.check_api()
             
             if api_info['available']:
                 self.root.after(0, lambda: self.gui.update_cuda_status(
-                    f"✓ OpenAI 준비 완료",
+                    f"✓ DeepL 준비 완료",
                     True
                 ))
                 self.root.after(0, lambda: self.gui.status_label.config(
-                    text="준비 완료! 모델을 선택하고 SRT 파일을 선택해주세요.",
+                    text=f"준비 완료! ({api_info['usage']}) SRT 파일을 선택해주세요.",
                     foreground="green"
                 ))
                 
@@ -154,7 +170,56 @@ class SRTTranslatorApp:
     
     def _ensure_translator_loaded(self, model_type: str):
         """선택한 모델의 번역기가 로드되어 있는지 확인하고 로드"""
-        if model_type == "nllb" and self.nllb_translator is None:
+        if model_type == "deepl" and self.deepl_translator is None:
+            # DeepL 번역기 로딩
+            try:
+                self.root.after(0, lambda: self.gui.status_label.config(
+                    text="DeepL 모델 로딩 중...",
+                    foreground="blue"
+                ))
+                
+                self.deepl_translator = DeepLTranslator(
+                    api_key=self.deepl_api_key
+                )
+                
+                api_info = self.deepl_translator.check_api()
+                if not api_info['available']:
+                    raise Exception(api_info['status'])
+                
+                self.root.after(0, lambda: self.gui.update_cuda_status("✓ DeepL API 연결됨", True))
+                self.root.after(0, lambda: self.gui.status_label.config(
+                    text=f"DeepL 모델 준비 완료! ({api_info['usage']})",
+                    foreground="green"
+                ))
+            except Exception as e:
+                raise RuntimeError(f"DeepL 초기화 실패: {str(e)}")
+        
+        elif model_type == "openai" and self.openai_translator is None:
+            # OpenAI 번역기 로딩
+            try:
+                self.root.after(0, lambda: self.gui.status_label.config(
+                    text="OpenAI 모델 로딩 중...",
+                    foreground="blue"
+                ))
+                
+                self.openai_translator = OpenAITranslator(
+                    api_key=self.openai_api_key,
+                    model="gpt-4o-mini"
+                )
+                
+                api_info = self.openai_translator.check_api()
+                if not api_info['available']:
+                    raise Exception(api_info['status'])
+                
+                self.root.after(0, lambda: self.gui.update_cuda_status("✓ OpenAI API 연결됨", True))
+                self.root.after(0, lambda: self.gui.status_label.config(
+                    text="OpenAI 모델 준비 완료!",
+                    foreground="green"
+                ))
+            except Exception as e:
+                raise RuntimeError(f"OpenAI 초기화 실패: {str(e)}")
+        
+        elif model_type == "nllb" and self.nllb_translator is None:
             # NLLB 모델 로딩 (별도 스레드에서)
             import threading
             
@@ -224,7 +289,9 @@ class SRTTranslatorApp:
             raise RuntimeError(f"모델 로딩 실패: {str(e)}")
         
         # 사용할 번역기 선택
-        if model_type == "openai":
+        if model_type == "deepl":
+            translator = self.deepl_translator
+        elif model_type == "openai":
             translator = self.openai_translator
         else:
             translator = self.nllb_translator
@@ -258,7 +325,16 @@ class SRTTranslatorApp:
             self.root.after(0, lambda: self.gui.update_progress(current, total, start_time))
         
         # 배치 번역 수행 (모델에 따라 다른 파라미터)
-        if model_type == "openai":
+        if model_type == "deepl":
+            translated_texts = translator.translate_batch(
+                texts,
+                src_lang='EN',
+                tgt_lang='KO',
+                tone=tone,
+                batch_size=50,  # DeepL은 대량 처리 가능
+                progress_callback=progress_callback
+            )
+        elif model_type == "openai":
             translated_texts = translator.translate_batch(
                 texts,
                 tone=tone,
