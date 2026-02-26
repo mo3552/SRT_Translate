@@ -8,50 +8,6 @@ import re
 class OpenAITranslator:
     """OpenAI GPT 모델 기반 번역기"""
     
-    # 정식 자막 스타일 학습용 Few-shot 예시
-    FEW_SHOT_EXAMPLES = [
-        {
-            "eng": "Colonel, give us the room, please.",
-            "kor": "대령, 자리 좀 비켜 주시죠"
-        },
-        {
-            "eng": "Four years retired yet two salutes?",
-            "kor": "은퇴한 지 4년인데\n경례를 두 번이나?"
-        },
-        {
-            "eng": "- Shows respect.\n- Have a seat.",
-            "kor": "- 존경심의 표현입니다\n- 앉아요"
-        },
-        {
-            "eng": "Do you know who I am?",
-            "kor": "내가 누군지 아나요?"
-        },
-        {
-            "eng": "Well, if you were to guess.",
-            "kor": "한번 맞혀 보시죠"
-        },
-        {
-            "eng": "Judging by your age, appearance,\nand how a Marine colonel\njust followed your order without a yip,",
-            "kor": "나이와 외모\n해병대 대령이 군말 없이\n명령을 따른 걸 미루어 보면"
-        },
-        {
-            "eng": "I'd guess you're some kind\nof high-level spook.",
-            "kor": "꽤 높은 자리의\n정보원일 것 같군요"
-        },
-        {
-            "eng": "Your father and grandfather served?",
-            "kor": "아버지와 할아버지도\n군인이었죠?"
-        },
-        {
-            "eng": "Yes.",
-            "kor": "그렇습니다"
-        },
-        {
-            "eng": "As an elite sniper,\nyou have 113 confirmed kills\nand an additional 81 probable kills.",
-            "kor": "엘리트 저격수로서\n확인된 사살이 113건\n거기에 추정 사살 81건"
-        }
-    ]
-    
     def __init__(
         self,
         api_key: str,
@@ -116,12 +72,6 @@ class OpenAITranslator:
         
         tone_guide = tone_instruction.get(tone, tone_instruction['auto'])
         
-        # Few-shot 예시 생성 (모든 예시 사용)
-        examples = "\n\n".join([
-            f"예시 {i+1}:\n영문: {ex['eng']}\n한글: {ex['kor']}"
-            for i, ex in enumerate(self.FEW_SHOT_EXAMPLES)
-        ])
-        
         prompt = f"""당신은 전문 영상 자막 번역가입니다. 아래 영어 자막을 정식 배포 자막 수준의 고품질 한국어로 번역하세요.
 
 ## 번역 원칙 (엄수 필수)
@@ -135,7 +85,6 @@ class OpenAITranslator:
 2. **줄바꿈 처리 (매우 중요!)**:
    - 원문에 줄바꿈(\\n)이 있으면 한국어도 반드시 줄바꿈 유지
    - 의미 단위로 줄을 나누되, 자연스럽게 조정
-   - 예시에서 줄바꿈 위치를 정확히 학습할 것
 
 3. **의역 우선**:
    - 직역 절대 금지, 한국어 관용 표현으로 의역
@@ -152,12 +101,7 @@ class OpenAITranslator:
    - 문맥상 명확한 주어/목적어는 과감히 생략
    - 자막 특성상 최대한 짧게
 
-## 정식 자막 스타일 학습 예시
-
-{examples}
-
 ## 번역 수행
-- 위 예시의 스타일, 줄바꿈, 문체를 정확히 모방하세요
 - 번역문만 출력 (설명, 주석, 따옴표 금지)
 - 마침표는 가급적 생략
 
