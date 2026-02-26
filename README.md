@@ -139,13 +139,16 @@ pip install -r requirements.txt
 ### DeepL API 요금 (추천)
 
 **DeepL API Free:**
+
 - 무료: 월 50만 자까지
 - 대부분의 영화/드라마 자막 번역 가능
 
 **DeepL API Pro:**
+
 - 종량제: $5.50 / 100만 자 (약 7,700원)
 
 **예상 비용 (Pro 기준):**
+
 - 자막 100줄: 약 4~8원
 - 자막 1000줄: 약 40~80원
 - 영화 전체 (2000~3000줄): 약 80~240원
@@ -153,10 +156,12 @@ pip install -r requirements.txt
 ### OpenAI GPT-4o-mini 요금
 
 **OpenAI GPT-4o-mini 요금:**
+
 - Input: $0.150 / 1M 토큰
 - Output: $0.600 / 1M 토큰
 
 **예상 비용:**
+
 - 자막 100줄: 약 2~5원
 - 자막 1000줄: 약 15~30원
 - 영화 전체 (2000~3000줄): 약 50~100원
