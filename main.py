@@ -23,12 +23,14 @@ class SRTTranslatorApp:
         """애플리케이션 초기화"""
         # 환경 변수에서 API 키 로드
         self.openai_api_key = os.getenv('OPENAI_API_KEY')
-        self.deepl_api_key = '7d9b9126-3507-4e20-a200-d091a39bfb16:fx'  # DeepL API 키
+        self.deepl_api_key = os.getenv('DEEPL_API_KEY')
         self.hf_token = os.getenv('HF_TOKEN')
         
         # API 키 검증
         if not self.openai_api_key:
             print("경고: OPENAI_API_KEY가 .env 파일에 설정되지 않았습니다.", file=sys.stderr)
+        if not self.deepl_api_key:
+            print("경고: DEEPL_API_KEY가 .env 파일에 설정되지 않았습니다.", file=sys.stderr)
         if not self.hf_token:
             print("경고: HF_TOKEN이 .env 파일에 설정되지 않았습니다.", file=sys.stderr)
         
