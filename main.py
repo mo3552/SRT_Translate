@@ -128,6 +128,10 @@ class SRTTranslatorApp:
     def _load_models(self):
         """모델 로딩"""
         try:
+            # DeepL API 키 확인
+            if not self.deepl_api_key:
+                raise ValueError("DEEPL_API_KEY가 .env 파일에 설정되지 않았습니다.")
+            
             # 기본적으로 DeepL 모델 로드
             self.root.after(0, lambda: self.gui.status_label.config(
                 text="DeepL 모델 초기화 중...",
@@ -173,6 +177,10 @@ class SRTTranslatorApp:
     def _ensure_translator_loaded(self, model_type: str):
         """선택한 모델의 번역기가 로드되어 있는지 확인하고 로드"""
         if model_type == "deepl" and self.deepl_translator is None:
+            # DeepL API 키 확인
+            if not self.deepl_api_key:
+                raise RuntimeError("DEEPL_API_KEY가 .env 파일에 설정되지 않았습니다.")
+            
             # DeepL 번역기 로딩
             try:
                 self.root.after(0, lambda: self.gui.status_label.config(
@@ -197,6 +205,10 @@ class SRTTranslatorApp:
                 raise RuntimeError(f"DeepL 초기화 실패: {str(e)}")
         
         elif model_type == "openai" and self.openai_translator is None:
+            # OpenAI API 키 확인
+            if not self.openai_api_key:
+                raise RuntimeError("OPENAI_API_KEY가 .env 파일에 설정되지 않았습니다.")
+            
             # OpenAI 번역기 로딩
             try:
                 self.root.after(0, lambda: self.gui.status_label.config(
@@ -226,7 +238,7 @@ class SRTTranslatorApp:
             import threading
             
             loading_complete = threading.Event()
-            loading_error = [None]  # 에러를 저장할 리스트
+            loading_error: list[Exception | None] = [None]  # 에러를 저장할 리스트
             
             def load_nllb():
                 try:
@@ -290,17 +302,6 @@ class SRTTranslatorApp:
         except Exception as e:
             raise RuntimeError(f"모델 로딩 실패: {str(e)}")
         
-        # 사용할 번역기 선택
-        if model_type == "deepl":
-            translator = self.deepl_translator
-        elif model_type == "openai":
-            translator = self.openai_translator
-        else:
-            translator = self.nllb_translator
-        
-        if not translator:
-            raise RuntimeError("번역기가 초기화되지 않았습니다.")
-        
         # 진행 상황 초기화
         self.root.after(0, self.gui.reset_progress)
         
@@ -328,7 +329,9 @@ class SRTTranslatorApp:
         
         # 배치 번역 수행 (모델에 따라 다른 파라미터)
         if model_type == "deepl":
-            translated_texts = translator.translate_batch(
+            if not self.deepl_translator:
+                raise RuntimeError("DeepL 번역기가 초기화되지 않았습니다.")
+            translated_texts = self.deepl_translator.translate_batch(
                 texts,
                 src_lang='EN',
                 tgt_lang='KO',
@@ -337,14 +340,18 @@ class SRTTranslatorApp:
                 progress_callback=progress_callback
             )
         elif model_type == "openai":
-            translated_texts = translator.translate_batch(
+            if not self.openai_translator:
+                raise RuntimeError("OpenAI 번역기가 초기화되지 않았습니다.")
+            translated_texts = self.openai_translator.translate_batch(
                 texts,
                 tone=tone,
                 batch_size=5,  # OpenAI는 문맥 파악을 위해 5개씩 묶음
                 progress_callback=progress_callback
             )
         else:  # NLLB
-            translated_texts = translator.translate_batch(
+            if not self.nllb_translator:
+                raise RuntimeError("NLLB 번역기가 초기화되지 않았습니다.")
+            translated_texts = self.nllb_translator.translate_batch(
                 texts,
                 src_lang='eng',
                 tgt_lang='kor',
