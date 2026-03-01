@@ -102,6 +102,51 @@ class DeepLTranslator:
         
         return text
     
+    def _optimize_subtitle(self, text: str) -> str:
+        """
+        자막 최적화 후처리 (축약 및 자연스러운 대화체 변환)
+        
+        Args:
+            text: 번역된 텍스트
+            
+        Returns:
+            최적화된 텍스트
+        """
+        # 불필요한 표현 정리 및 축약
+        optimizations = [
+            # 번역 투 제거
+            (r'당신은\s+', ''),
+            (r'당신의\s+', ''),
+            (r'그것은\s+', ''),
+            (r'저것은\s+', ''),
+            (r'이것은\s+', ''),
+            
+            # 간결화
+            (r'하셨나요\?', '하셨죠?'),
+            (r'했나요\?', '했어?'),
+            (r'입니까\?', '인가요?'),
+            
+            # 자연스러운 구어체
+            (r'그리고\s+', ''),
+            (r'하지만\s+', ''),
+            (r'그러나\s+', ''),
+            
+            # 불필요한 마침표 제거 (자막 스타일)
+            (r'\.$', ''),  # 문장 끝 마침표 제거
+            (r'\.\s*\n', '\n'),  # 줄바꿈 앞 마침표 제거
+            
+            # 연속 공백 제거
+            (r'\s+', ' '),
+            (r'\n\s+', '\n'),
+            (r'\s+\n', '\n'),
+        ]
+        
+        result = text
+        for pattern, replacement in optimizations:
+            result = re.sub(pattern, replacement, result)
+        
+        return result.strip()
+    
     def translate(
         self,
         text: str,
@@ -122,11 +167,12 @@ class DeepLTranslator:
             번역된 텍스트
         """
         try:
-            # DeepL API로 번역
+            # DeepL API로 번역 (자연스러운 대화체를 위한 설정)
             result = self.translator.translate_text(
                 text,
                 source_lang=src_lang,
-                target_lang=tgt_lang
+                target_lang=tgt_lang,
+                formality='prefer_less'  # 더 자연스럽고 간결한 대화체
             )
             
             # 결과가 리스트인 경우와 단일 객체인 경우 처리
@@ -138,6 +184,9 @@ class DeepLTranslator:
             # 문체 변환 적용
             if tone != 'auto':
                 translated = self._apply_tone(translated, tone)
+            
+            # 후처리 최적화 적용 (축약 및 자연스러운 대화체)
+            translated = self._optimize_subtitle(translated)
             
             return translated
             
@@ -176,11 +225,12 @@ class DeepLTranslator:
             batch = texts[i:i + batch_size]
             
             try:
-                # DeepL API는 여러 텍스트를 한 번에 번역 가능
+                # DeepL API는 여러 텍스트를 한 번에 번역 가능 (자연스러운 대화체 설정)
                 results = self.translator.translate_text(
                     batch,
                     source_lang=src_lang,
-                    target_lang=tgt_lang
+                    target_lang=tgt_lang,
+                    formality='prefer_less'  # 더 자연스럽고 간결한 대화체
                 )
                 
                 # 결과가 리스트가 아닐 수도 있음 (단일 항목인 경우)
@@ -192,6 +242,8 @@ class DeepLTranslator:
                     text = result.text
                     if tone != 'auto':
                         text = self._apply_tone(text, tone)
+                    # 후처리 최적화 적용 (축약 및 자연스러운 대화체)
+                    text = self._optimize_subtitle(text)
                     translated.append(text)
                 
             except Exception as e:
