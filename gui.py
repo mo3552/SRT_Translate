@@ -19,7 +19,7 @@ class TranslatorGUI:
         """
         self.root = root
         self.root.title("SRT 자막 번역기")
-        self.root.geometry("700x700")
+        # self.root.geometry("680x750")
         self.root.resizable(False, False)
         
         # 번역 콜백 함수
@@ -99,7 +99,7 @@ class TranslatorGUI:
         
         ttk.Label(
             title_frame,
-            text="작품명을 입력하면 번역 품질이 향상됩니다 (장르별 문체, 용어 통일 등)",
+            text="OpenAI 옵션 작품명을 입력하면 번역 품질이 향상됩니다 (장르별 문체, 용어 통일 등)",
             font=("맑은 고딕", 8),
             foreground="gray"
         ).grid(row=1, column=0, sticky=tk.W, pady=(5, 0))
