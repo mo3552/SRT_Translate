@@ -285,13 +285,14 @@ class SRTTranslatorApp:
             if loading_error[0]:
                 raise loading_error[0]
     
-    def translate_file(self, file_path: str, tone: str):
+    def translate_file(self, file_path: str, tone: str, title: str = ''):
         """
         SRT 파일 번역
         
         Args:
             file_path: SRT 파일 경로
             tone: 문체 설정
+            title: 작품명 (선택 사항)
         """
         # 선택한 모델 타입 가져오기
         model_type = self.gui.model_var.get()
@@ -345,6 +346,7 @@ class SRTTranslatorApp:
             translated_texts = self.openai_translator.translate_batch(
                 texts,
                 tone=tone,
+                title=title,  # 작품명 전달
                 batch_size=5,  # OpenAI는 문맥 파악을 위해 5개씩 묶음
                 progress_callback=progress_callback
             )

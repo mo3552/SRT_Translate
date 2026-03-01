@@ -19,7 +19,7 @@ class TranslatorGUI:
         """
         self.root = root
         self.root.title("SRT 자막 번역기")
-        self.root.geometry("700x650")
+        self.root.geometry("700x700")
         self.root.resizable(False, False)
         
         # 번역 콜백 함수
@@ -28,6 +28,7 @@ class TranslatorGUI:
         
         # 변수
         self.file_path = tk.StringVar()
+        self.title_var = tk.StringVar()  # 작품명 (선택사항)
         self.model_var = tk.StringVar(value="deepl")  # 모델 선택 (DeepL 기본값)
         self.tone_var = tk.StringVar(value="auto")
         self.cuda_status = tk.StringVar(value="확인 중...")
@@ -85,9 +86,27 @@ class TranslatorGUI:
             command=self._on_model_change
         ).grid(row=2, column=0, sticky=tk.W, padx=(0, 20))
         
+        # 작품명 입력 (선택 사항)
+        title_frame = ttk.LabelFrame(main_frame, text="작품명 (선택 사항)", padding="10")
+        title_frame.grid(row=3, column=0, columnspan=3, sticky="ew", pady=(0, 15))
+        
+        title_entry = ttk.Entry(
+            title_frame,
+            textvariable=self.title_var,
+            width=50
+        )
+        title_entry.grid(row=0, column=0, sticky="ew")
+        
+        ttk.Label(
+            title_frame,
+            text="작품명을 입력하면 번역 품질이 향상됩니다 (장르별 문체, 용어 통일 등)",
+            font=("맑은 고딕", 8),
+            foreground="gray"
+        ).grid(row=1, column=0, sticky=tk.W, pady=(5, 0))
+        
         # 파일 선택
         file_frame = ttk.LabelFrame(main_frame, text="파일 선택", padding="10")
-        file_frame.grid(row=3, column=0, columnspan=3, sticky="ew", pady=(0, 15))
+        file_frame.grid(row=4, column=0, columnspan=3, sticky="ew", pady=(0, 15))
         
         ttk.Entry(
             file_frame,
@@ -104,7 +123,7 @@ class TranslatorGUI:
         
         # 문체 설정
         tone_frame = ttk.LabelFrame(main_frame, text="문체 설정", padding="10")
-        tone_frame.grid(row=4, column=0, columnspan=3, sticky="ew", pady=(0, 15))
+        tone_frame.grid(row=5, column=0, columnspan=3, sticky="ew", pady=(0, 15))
         
         ttk.Radiobutton(
             tone_frame,
@@ -129,7 +148,7 @@ class TranslatorGUI:
         
         # 진행 상황
         progress_frame = ttk.LabelFrame(main_frame, text="진행 상황", padding="10")
-        progress_frame.grid(row=5, column=0, columnspan=3, sticky="ew", pady=(0, 15))
+        progress_frame.grid(row=6, column=0, columnspan=3, sticky="ew", pady=(0, 15))
         
         # 진행률 바
         self.progress_bar = ttk.Progressbar(
@@ -155,7 +174,7 @@ class TranslatorGUI:
             text="번역 시작",
             command=self._start_translation
         )
-        self.translate_btn.grid(row=6, column=0, columnspan=3, pady=(0, 10))
+        self.translate_btn.grid(row=7, column=0, columnspan=3, pady=(0, 10))
         
         # 상태 표시
         self.status_label = ttk.Label(
@@ -164,7 +183,7 @@ class TranslatorGUI:
             foreground="green",
             font=("맑은 고딕", 9)
         )
-        self.status_label.grid(row=7, column=0, columnspan=3)
+        self.status_label.grid(row=8, column=0, columnspan=3)
         
     def _select_file(self):
         """파일 선택 다이얼로그"""
@@ -224,12 +243,13 @@ class TranslatorGUI:
         try:
             file_path = self.file_path.get()
             tone = self.tone_var.get()
+            title = self.title_var.get().strip()  # 작품명 (선택사항)
             
             self.status_label.config(text="번역 진행 중...", foreground="blue")
             
             # 콜백 함수 호출
             if self.translate_callback:
-                self.translate_callback(file_path, tone)
+                self.translate_callback(file_path, tone, title)
             
         except Exception as e:
             self.root.after(0, lambda: messagebox.showerror("오류", f"번역 중 오류 발생:\n{str(e)}"))

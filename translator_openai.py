@@ -53,13 +53,14 @@ class OpenAITranslator:
                 'status': f'Error: {str(e)}'
             }
     
-    def _create_translation_prompt(self, text: str, tone: str) -> str:
+    def _create_translation_prompt(self, text: str, tone: str, title: str = '') -> str:
         """
         번역 프롬프트 생성 (정식 자막 수준의 고품질 번역)
         
         Args:
             text: 번역할 텍스트
             tone: 문체 설정
+            title: 작품명 (선택 사항)
             
         Returns:
             프롬프트 문자열
@@ -72,7 +73,10 @@ class OpenAITranslator:
         
         tone_guide = tone_instruction.get(tone, tone_instruction['auto'])
         
-        prompt = f"""당신은 전문 영상 자막 번역가입니다. 아래 영어 자막을 정식 배포 자막 수준의 고품질 한국어로 번역하세요.
+        # 작품명이 제공된 경우 추가 컨텍스트
+        title_context = f"\n\n작품: {title}\n(작품의 장르, 분위기, 등장인물 관계를 고려하여 번역하세요)" if title else ""
+        
+        prompt = f"""당신은 전문 영상 자막 번역가입니다. 아래 영어 자막을 정식 배포 자막 수준의 고품질 한국어로 번역하세요.{title_context}
 
 ## 번역 원칙 (엄수 필수)
 
@@ -161,7 +165,8 @@ class OpenAITranslator:
     def translate(
         self,
         text: str,
-        tone: str = 'auto'
+        tone: str = 'auto',
+        title: str = ''
     ) -> str:
         """
         텍스트 번역
@@ -169,6 +174,7 @@ class OpenAITranslator:
         Args:
             text: 번역할 텍스트
             tone: 문체 ('formal', 'casual', 'auto')
+            title: 작품명 (선택 사항)
             
         Returns:
             번역된 텍스트
@@ -177,7 +183,7 @@ class OpenAITranslator:
             return text
         
         try:
-            prompt = self._create_translation_prompt(text, tone)
+            prompt = self._create_translation_prompt(text, tone, title)
             
             response = self.client.chat.completions.create(
                 model=self.model,
@@ -211,6 +217,7 @@ class OpenAITranslator:
         self,
         texts: List[str],
         tone: str = 'auto',
+        title: str = '',
         batch_size: int = 5,
         progress_callback: Optional[Callable[[int, int], None]] = None
     ) -> List[str]:
@@ -220,6 +227,7 @@ class OpenAITranslator:
         Args:
             texts: 번역할 텍스트 리스트
             tone: 문체 ('formal', 'casual', 'auto')
+            title: 작품명 (선택 사항, 입력 시 번역 품질 향상)
             batch_size: 한 번에 번역할 자막 수 (5~10 권장)
             progress_callback: 진행 상황 콜백 함수 (current, total)
             
@@ -249,7 +257,10 @@ class OpenAITranslator:
                         'auto': '대화 맥락에 맞는 자연스러운 문체를 사용하세요.'
                     }
                     
-                    batch_prompt = f"""아래는 연속된 영화 자막입니다. 각 자막을 번호와 함께 정식 배포 자막 수준으로 번역하세요.
+                    # 작품명이 제공된 경우 추가 컨텍스트
+                    title_context = f"\n\n작품: {title}\n(작품의 장르, 분위기, 등장인물 관계를 고려하여 번역하세요)" if title else ""
+                    
+                    batch_prompt = f"""아래는 연속된 영화 자막입니다. 각 자막을 번호와 함께 정식 배포 자막 수준으로 번역하세요.{title_context}
 
 번역 원칙:
 1. 짧고 간결하게 - 긴 문장은 핵심만 살려 대폭 축약 (자막 스타일)
@@ -314,11 +325,11 @@ class OpenAITranslator:
                     # 번역 개수가 맞지 않으면 개별 번역으로 폴백
                     if len(translations) != len(non_empty_texts):
                         print(f"배치 번역 개수 불일치 ({len(translations)} vs {len(non_empty_texts)}), 개별 번역으로 전환")
-                        translations = [self.translate(t, tone) for t in non_empty_texts]
+                        translations = [self.translate(t, tone, title) for t in non_empty_texts]
                     
                 except Exception as e:
                     print(f"배치 번역 실패, 개별 번역으로 전환: {e}")
-                    translations = [self.translate(t, tone) for t in non_empty_texts]
+                    translations = [self.translate(t, tone, title) for t in non_empty_texts]
                     # API 제한 방지를 위한 짧은 대기
                     time.sleep(0.5)
                 
